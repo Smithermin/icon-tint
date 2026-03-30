@@ -3,12 +3,26 @@ import { Github, Palette, Upload as UploadIcon, Download, Languages, AlertCircle
 import { tintIcon } from './utils/imageUtils'
 import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
+import { locales, type Lang } from './locales'
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
 function App() {
+  const [lang, setLang] = useState<Lang>(() => {
+    const saved = localStorage.getItem('lang') as Lang;
+    return saved || (navigator.language.startsWith('zh') ? 'zh' : 'en');
+  });
+
+  const t = locales[lang];
+
+  const toggleLang = () => {
+    const next = lang === 'zh' ? 'en' : 'zh';
+    setLang(next);
+    localStorage.setItem('lang', next);
+  };
+
   const [color, setColor] = useState('#07C160')
   const [file, setFile] = useState<File | null>(null)
   const [tintedUrl, setTintedUrl] = useState<string | null>(null)
@@ -20,12 +34,12 @@ function App() {
 
   const processFile = useCallback(async (selectedFile: File) => {
     if (!['image/png', 'image/svg+xml'].includes(selectedFile.type)) {
-      setError('仅支持 PNG 或 SVG 格式文件')
+      setError(t.errorFormat)
       return
     }
     setError(null)
     setFile(selectedFile)
-  }, [])
+  }, [t.errorFormat])
 
   useEffect(() => {
     if (file) {
@@ -36,10 +50,10 @@ function App() {
         })
         .catch((err) => {
           console.error(err)
-          setError('图片处理失败，请重试')
+          setError(t.errorProcess)
         })
     }
-  }, [file, color])
+  }, [file, color, t.errorProcess])
 
 
   const onDrop = (e: React.DragEvent) => {
@@ -78,12 +92,15 @@ function App() {
             <span className="text-xl font-bold tracking-tight text-slate-800">IconTint</span>
           </div>
           <div className="flex items-center gap-4">
-            <button className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5 rounded-full hover:bg-slate-100">
+            <button 
+              onClick={toggleLang}
+              className="flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors px-3 py-1.5 rounded-full hover:bg-slate-100"
+            >
               <Languages size={18} />
-              <span>中文</span>
+              <span>{lang === 'zh' ? 'English' : '中文'}</span>
             </button>
             <a 
-              href="https://github.com" 
+              href="https://github.com/Smithermin/icon-tint" 
               target="_blank" 
               rel="noreferrer" 
               className="w-10 h-10 flex items-center justify-center text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-full transition-all"
@@ -98,13 +115,13 @@ function App() {
         {/* Hero */}
         <div className="text-center mb-16 space-y-4">
           <div className="inline-block px-4 py-1.5 bg-green-50 text-green-600 text-xs font-bold uppercase tracking-wider rounded-full mb-2">
-            现代化 · 极简 · 隐私优先
+            {t.badge}
           </div>
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight">
-            图标变色从未如此简单
+            {t.title}
           </h1>
           <p className="text-lg md:text-xl text-slate-500 max-w-2xl mx-auto font-medium">
-            为开发者量身定制的单色图标变色工具，处理过程完全发生在您的浏览器本地。
+            {t.description}
           </p>
         </div>
 
@@ -148,10 +165,10 @@ function App() {
               
               <div className="relative z-10 text-center space-y-2">
                 <p className="text-base font-bold text-slate-700">
-                  {file ? file.name : "点击或拖拽上传图标"}
+                  {file ? file.name : t.uploadTitle}
                 </p>
                 <p className="text-sm text-slate-400 font-medium">
-                  {file ? "点击此处可更换图标" : "支持 SVG, PNG (1MB以内)"}
+                  {file ? t.changeIcon : t.uploadHint}
                 </p>
               </div>
 
@@ -170,7 +187,7 @@ function App() {
             <div className="glass rounded-3xl p-8 space-y-10 flex flex-col justify-center h-full">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                   <label className="text-sm font-bold text-slate-800 uppercase tracking-widest">目标颜色</label>
+                   <label className="text-sm font-bold text-slate-800 uppercase tracking-widest">{t.targetColor}</label>
                    <span className="text-xs font-mono font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded uppercase">{color}</span>
                 </div>
                 <div className="flex gap-4">
@@ -193,7 +210,7 @@ function App() {
               </div>
 
               <div className="space-y-6">
-                <label className="text-sm font-bold text-slate-800 uppercase tracking-widest">常用色板</label>
+                <label className="text-sm font-bold text-slate-800 uppercase tracking-widest">{t.commonColors}</label>
                 <div className="grid grid-cols-5 gap-3">
                   {[
                     '#07C160', // 微信绿
@@ -226,7 +243,7 @@ function App() {
           {/* Preview Area */}
           <div className="lg:col-span-1">
             <div className="glass rounded-3xl p-8 h-full flex flex-col shadow-2xl shadow-slate-200/50">
-              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-10 text-center">变色预览</h3>
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-widest mb-10 text-center">{t.previewTitle}</h3>
               <div className="flex-1 flex flex-col items-center justify-between gap-12">
                 <div className="relative w-full aspect-square max-w-[200px] flex items-center justify-center bg-slate-50 rounded-[40px] border-4 border-white shadow-inner overflow-hidden group">
                    {/* Professional Checkerboard background for transparency preview */}
@@ -241,7 +258,7 @@ function App() {
                    ) : (
                      <div className="relative z-10 flex flex-col items-center gap-3 text-slate-300">
                         <Palette size={48} strokeWidth={1.5} />
-                        <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-400">等待上传图标...</span>
+                        <span className="text-[10px] font-bold uppercase tracking-tighter text-slate-400">{t.waitingUpload}</span>
                      </div>
                    )}
                 </div>
@@ -252,7 +269,7 @@ function App() {
                   className="w-full flex items-center justify-center gap-3 bg-slate-900 text-white py-5 rounded-[24px] font-bold hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 disabled:opacity-20 disabled:cursor-not-allowed group"
                 >
                   <Download size={20} className="transition-transform group-hover:-translate-y-1" />
-                  下载变色图标
+                  {t.downloadBtn}
                 </button>
 
 
@@ -260,7 +277,7 @@ function App() {
                 {!isSingleColor && tintedUrl && (
                   <div className="flex items-center gap-2 text-amber-600 bg-amber-50 px-4 py-3 rounded-2xl text-[10px] font-bold leading-tight">
                     <AlertCircle size={14} className="shrink-0" />
-                    <span>检测到图标包含多种颜色，变色效果可能受限</span>
+                    <span>{t.singleColorWarn}</span>
                   </div>
                 )}
 
@@ -272,7 +289,7 @@ function App() {
         {/* FAQ Section */}
         <div className="mt-40 max-w-4xl mx-auto space-y-16">
            <div className="text-center space-y-4">
-             <h2 className="text-3xl font-black text-slate-900">常见问题 FAQ</h2>
+             <h2 className="text-3xl font-black text-slate-900">{t.faqTitle}</h2>
              <div className="w-12 h-1.5 bg-green-500 mx-auto rounded-full" />
            </div>
            
@@ -281,36 +298,36 @@ function App() {
                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 mb-4">
                   <Check size={20} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">IconTint 是如何处理图片的？</h3>
+                <h3 className="text-lg font-bold text-slate-900">{t.faq1Q}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                  所有的图片处理均在您的浏览器本地完成（通过 Canvas 和 DOM API），没有任何数据会上传到服务器。您的隐私是我们的首要任务。
+                  {t.faq1A}
                 </p>
               </div>
               <div className="space-y-3">
                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 mb-4">
                   <Check size={20} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">支持哪些图片格式？</h3>
+                <h3 className="text-lg font-bold text-slate-900">{t.faq2Q}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                  目前支持 SVG 和 PNG。对于 PNG，我们建议使用具有透明背景的单色图标以获得最佳效果。如果是彩色图，会整体替换为目标色。
+                  {t.faq2A}
                 </p>
               </div>
               <div className="space-y-3">
                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 mb-4">
                   <Check size={20} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">为什么变色后的 PNG 有锯齿？</h3>
+                <h3 className="text-lg font-bold text-slate-900">{t.faq3Q}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                  这通常取决于原始图片的质量。Canvas 变色会尽可能保留原始的 Alpha 通道（抗锯齿），但如果原图分辨率较低或带有半透明阴影，变色后可能在边缘处更为明显。
+                  {t.faq3A}
                 </p>
               </div>
               <div className="space-y-3">
                 <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center text-slate-900 mb-4">
                   <Check size={20} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">它是免费的吗？</h3>
+                <h3 className="text-lg font-bold text-slate-900">{t.faq4Q}</h3>
                 <p className="text-slate-500 text-sm leading-relaxed font-medium">
-                  是的，它是完全免费且开源的。作为一个工具类项目，它旨在解决开发者处理图标颜色的最后 1 公里痛点，没有任何广告或付费门槛。
+                  {t.faq4A}
                 </p>
               </div>
            </div>
@@ -326,11 +343,11 @@ function App() {
             </div>
             <span className="text-sm font-bold tracking-tight text-slate-400">IconTint</span>
           </div>
-          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">© 2026 IconTint · 基于 React & Tailwind CSS 构建 · 部署于 Cloudflare Pages</p>
+          <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{t.footerNote}</p>
           <div className="flex justify-center gap-6 text-slate-300">
-            <a href="#" className="hover:text-slate-600 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-slate-600 transition-colors">Github</a>
-            <a href="#" className="hover:text-slate-600 transition-colors">About</a>
+            <a href="#" className="hover:text-slate-600 transition-colors">{t.privacy}</a>
+            <a href="https://github.com/Smithermin/icon-tint" target="_blank" rel="noreferrer" className="hover:text-slate-600 transition-colors">{t.github}</a>
+            <a href="#" className="hover:text-slate-600 transition-colors">{t.about}</a>
           </div>
         </div>
       </footer>
